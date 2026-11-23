@@ -1,5 +1,5 @@
 #!name=G1 ACQ
-#!desc=自定义 2TB 目标为 g1.2tb.ai.18months_eft + 自动采集原始 SKU + 20TB/30TB 原优惠映射与回退
+#!desc=v7.2：2TB 10档 EFT 候选按优先级尝试与一键切换 + 自动采集原始 SKU + 20TB/30TB 原优惠映射与回退
 #!system=ios
 
 [Rule]

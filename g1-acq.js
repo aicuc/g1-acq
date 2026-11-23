@@ -2,9 +2,33 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.1";
+  var VERSION = "g1-acq-v7.2";
   var SOURCE_PREFIX = "g1.ios.2tb.";
-  var TARGET = "g1.2tb.ai.18months_eft";
+  var TARGETS_2TB = [
+    "g1.2tb.ai.18months_eft",
+    "g1.2tb.ai.15months_eft",
+    "g1.2tb.ai.12months_eft",
+    "g1.ios.2tb.ai.12months_eft",
+    "g1.play.2tb.ai.12months_eft",
+    "g1.ios.2tb.ai.eft-12mo",
+    "g1.play.2tb.ai.eft-12mo",
+    "g1.2tb.ai.6months_eft",
+    "g1.ios.2tb.ai.eft-3mo",
+    "g1.play.2tb.ai.eft-3mo"
+  ];
+  var TARGET_KEY = "g1.2tb.target.index.v1";
+  var selectedIndex = 0;
+  try {
+    if (typeof $persistentStore !== "undefined" && typeof $persistentStore.read === "function") {
+      var savedIdx = parseInt($persistentStore.read(TARGET_KEY), 10);
+      if (isFinite(savedIdx) && savedIdx >= 0 && savedIdx < TARGETS_2TB.length) {
+        selectedIndex = savedIdx;
+      }
+    }
+  } catch (error) {
+    selectedIndex = 0;
+  }
+  var TARGET = TARGETS_2TB[selectedIndex];
   var SKU_MAP = {
     "g1.ios.20tb.m.v2": "g1.20tb.3months_ip_90p.acq",
     "g1.ios.30tb.ai.pro.m": "g1.ai.ultra.3months_ip_90p.acq"
@@ -44,6 +68,14 @@
   var out = body;
 
   if (typeof body === "string") {
+    // If any candidate from selectedIndex onward appears in the original response,
+    // pick the highest-priority one; otherwise use TARGETS_2TB[selectedIndex].
+    for (var ti = selectedIndex; ti < TARGETS_2TB.length; ti++) {
+      if (body.indexOf(TARGETS_2TB[ti]) !== -1) {
+        TARGET = TARGETS_2TB[ti];
+        break;
+      }
+    }
     // Preserve v6's 20TB/30TB fallback rule using the original response.
     // These are observed strings, not a verified store catalog.
     var observed = body.match(/g1\.[a-z0-9._]{2,60}acq/g) || [];
@@ -56,6 +88,7 @@
         var fallback = false;
         if (isAnnual) {
           to = TARGET;
+          fallback = TARGET !== TARGETS_2TB[0];
         } else if (Object.prototype.hasOwnProperty.call(SKU_MAP, id)) {
           to = SKU_MAP[id];
           if (observed.indexOf(to) === -1 && FALLBACK[to] && observed.indexOf(FALLBACK[to]) !== -1) {

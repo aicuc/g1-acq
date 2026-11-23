@@ -3,9 +3,22 @@
 
 (function () {
   var ROOT = "https://one.google.com/g1-sku-report";
-  var VERSION = "v7.1.0";
+  var VERSION = "v7.2.0";
   var SCAN_KEY = "g1.sku.scan.v1";
   var TEST_KEY = "g1.pro.annual.test.v1";
+  var TARGET_KEY = "g1.2tb.target.index.v1";
+  var TARGETS_2TB = [
+    "g1.2tb.ai.18months_eft",
+    "g1.2tb.ai.15months_eft",
+    "g1.2tb.ai.12months_eft",
+    "g1.ios.2tb.ai.12months_eft",
+    "g1.play.2tb.ai.12months_eft",
+    "g1.ios.2tb.ai.eft-12mo",
+    "g1.play.2tb.ai.eft-12mo",
+    "g1.2tb.ai.6months_eft",
+    "g1.ios.2tb.ai.eft-3mo",
+    "g1.play.2tb.ai.eft-3mo"
+  ];
   var url = typeof $request === "object" && $request ? $request.url : "";
   if (typeof url !== "string" || !/^https:\/\/one\.google\.com\/g1-sku-report\/?(?:\?|$)/.test(url)) {
     $done({});
@@ -14,7 +27,39 @@
 
   var storageAvailable = typeof $persistentStore !== "undefined" &&
     typeof $persistentStore.read === "function";
+  var selectedIndex = 0;
+  if (storageAvailable) {
+    try {
+      var parsedIdx = parseInt($persistentStore.read(TARGET_KEY), 10);
+      if (isFinite(parsedIdx) && parsedIdx >= 0 && parsedIdx < TARGETS_2TB.length) {
+        selectedIndex = parsedIdx;
+      }
+    } catch (error) {
+      selectedIndex = 0;
+    }
+  }
   var clearMessage = "";
+  var idxMatch = url.match(/(?:\?|&)idx=(\d+)(?:&|$)/);
+  if (/(?:\?|&)next=1(?:&|$)/.test(url)) {
+    selectedIndex = (selectedIndex + 1) % TARGETS_2TB.length;
+    try {
+      $persistentStore.write(String(selectedIndex), TARGET_KEY);
+      clearMessage = "已切换到第 " + (selectedIndex + 1) + " 个 2TB 候选：" + TARGETS_2TB[selectedIndex] + "（请回 Google App 刷新订阅页）";
+    } catch (error) {
+      clearMessage = "本地存储接口暂未就绪，无法切换。";
+    }
+  } else if (idxMatch) {
+    var reqIdx = parseInt(idxMatch[1], 10);
+    if (isFinite(reqIdx) && reqIdx >= 0 && reqIdx < TARGETS_2TB.length) {
+      selectedIndex = reqIdx;
+      try {
+        $persistentStore.write(String(selectedIndex), TARGET_KEY);
+        clearMessage = "已选择第 " + (selectedIndex + 1) + " 个 2TB 候选：" + TARGETS_2TB[selectedIndex] + "（请回 Google App 刷新订阅页）";
+      } catch (error) {
+        clearMessage = "本地存储接口暂未就绪，无法切换。";
+      }
+    }
+  }
   if (/(?:\?|&)clear=1(?:&|$)/.test(url)) {
     try {
       var scanCleared = $persistentStore.write("{}", SCAN_KEY);
@@ -24,6 +69,7 @@
       clearMessage = "本地存储接口暂未就绪。";
     }
   }
+  var activeTarget = TARGETS_2TB[selectedIndex];
 
   function load(key) {
     if (!storageAvailable) return {};
@@ -52,7 +98,7 @@
         out.lastSeen = text(row.lastSeen, 32);
       } else {
         out.to = typeof row.to === "string" && /^g1\.[A-Za-z0-9._-]{1,160}$/.test(row.to) ?
-          row.to : row.id.indexOf("g1.ios.2tb.") === 0 ? "g1.2tb.ai.18months_eft" : "";
+          row.to : row.id.indexOf("g1.ios.2tb.") === 0 ? activeTarget : "";
         out.fallback = row.fallback === true;
       }
       return out;
@@ -83,7 +129,10 @@
       version: text(testRaw.version, 32),
       updatedAt: text(testRaw.updatedAt, 32),
       sourcePrefix: "g1.ios.2tb.",
-      target: "g1.2tb.ai.18months_eft",
+      target: text(testRaw.target, 180) || activeTarget,
+      selectedIndex: selectedIndex,
+      selectedTarget: activeTarget,
+      candidates: TARGETS_2TB,
       status: text(testRaw.status, 32),
       hitCount: count(testRaw.hitCount),
       annualHitCount: annualHitCount,
@@ -144,9 +193,17 @@
     "<p class=note>保持一个 G1 ACQ 模块开启即可：先采集原始响应中的编号，再执行三档改写。</p>",
     clearMessage ? "<p>" + escape(clearMessage) + "</p>" : "",
     storageAvailable ? "" : "<p>本地存储接口暂未就绪；此页尚未读取到采集记录。</p>",
+    "<section><h2>2TB 候选 SKU 顺序测试（当前第 " + (selectedIndex + 1) + " / " + TARGETS_2TB.length + " 档）</h2>",
+    "<p>当前生效目标：<code>" + escape(activeTarget) + "</code></p>",
+    "<nav class=actions><a href=\"" + ROOT + "?next=1\">不行，切换下一个</a><a href=\"" + ROOT + "?idx=0\">重置回第 1 档</a></nav>",
+    "<ol>" + TARGETS_2TB.map(function (sku, i) {
+      var label = "<code>" + escape(sku) + "</code>";
+      return "<li>" + (i === selectedIndex ? "<strong>[当前] " + label + "</strong>" :
+        "<a href=\"" + ROOT + "?idx=" + i + "\">" + label + "</a>") + "</li>";
+    }).join("") + "</ol></section>",
     "<section><h2>最近一次三档映射</h2>",
     "<p>版本：" + escape(report.test.version || "暂无") + "<br>状态：" + escape(status) + "；总替换次数：" + report.test.hitCount + "；其中 2TB：" + report.test.annualHitCount + "</p>",
-    "<p>2TB 源前缀：<code>g1.ios.2tb.</code><br>2TB 固定目标：<code>g1.2tb.ai.18months_eft</code><br>20TB / 30TB 沿用旧优惠映射与 75p 回退；各档实际目标见下表。<br>执行时间（UTC）：" + escape(report.test.updatedAt || "暂无") + "</p>",
+    "<p>2TB 源前缀：<code>g1.ios.2tb.</code><br>最近一次 2TB 实际目标：<code>" + escape(report.test.target) + "</code><br>20TB / 30TB 沿用旧优惠映射与 75p 回退；各档实际目标见下表。<br>执行时间（UTC）：" + escape(report.test.updatedAt || "暂无") + "</p>",
     "<p class=note>这里记录的是脚本执行结果；商品是否被 App Store 识别、价格和周期需查看购买面板。</p>",
     table(report.test.matchedFrom, false), "</section>",
     "<section><h2>浏览页面时采集到的候选 SKU</h2>",
