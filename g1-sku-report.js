@@ -52,7 +52,7 @@
         out.lastSeen = text(row.lastSeen, 32);
       } else {
         out.to = typeof row.to === "string" && /^g1\.[A-Za-z0-9._-]{1,160}$/.test(row.to) ?
-          row.to : row.id.indexOf("g1.ios.2tb.") === 0 ? "g1.2tb.ai.annual" : "";
+          row.to : row.id.indexOf("g1.ios.2tb.") === 0 ? "g1.2tb.ai.18months_eft" : "";
         out.fallback = row.fallback === true;
       }
       return out;
@@ -83,7 +83,7 @@
       version: text(testRaw.version, 32),
       updatedAt: text(testRaw.updatedAt, 32),
       sourcePrefix: "g1.ios.2tb.",
-      target: "g1.2tb.ai.annual",
+      target: "g1.2tb.ai.18months_eft",
       status: text(testRaw.status, 32),
       hitCount: count(testRaw.hitCount),
       annualHitCount: annualHitCount,
@@ -146,7 +146,7 @@
     storageAvailable ? "" : "<p>本地存储接口暂未就绪；此页尚未读取到采集记录。</p>",
     "<section><h2>最近一次三档映射</h2>",
     "<p>版本：" + escape(report.test.version || "暂无") + "<br>状态：" + escape(status) + "；总替换次数：" + report.test.hitCount + "；其中 2TB：" + report.test.annualHitCount + "</p>",
-    "<p>2TB 源前缀：<code>g1.ios.2tb.</code><br>2TB 固定目标：<code>g1.2tb.ai.annual</code><br>20TB / 30TB 沿用旧优惠映射与 75p 回退；各档实际目标见下表。<br>执行时间（UTC）：" + escape(report.test.updatedAt || "暂无") + "</p>",
+    "<p>2TB 源前缀：<code>g1.ios.2tb.</code><br>2TB 固定目标：<code>g1.2tb.ai.18months_eft</code><br>20TB / 30TB 沿用旧优惠映射与 75p 回退；各档实际目标见下表。<br>执行时间（UTC）：" + escape(report.test.updatedAt || "暂无") + "</p>",
     "<p class=note>这里记录的是脚本执行结果；商品是否被 App Store 识别、价格和周期需查看购买面板。</p>",
     table(report.test.matchedFrom, false), "</section>",
     "<section><h2>浏览页面时采集到的候选 SKU</h2>",

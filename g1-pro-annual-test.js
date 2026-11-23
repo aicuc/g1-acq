@@ -4,7 +4,7 @@
 (function () {
   var VERSION = "pro-annual-test-v2";
   var SOURCE_PREFIX = "g1.ios.2tb.";
-  var TARGET = "g1.2tb.ai.annual";
+  var TARGET = "g1.2tb.ai.18months_eft";
   var SKU_MAP = {
     "g1.ios.20tb.m.v2": "g1.20tb.3months_ip_90p.acq",
     "g1.ios.30tb.ai.pro.m": "g1.ai.ultra.3months_ip_90p.acq"
