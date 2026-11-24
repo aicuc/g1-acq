@@ -3,11 +3,11 @@
 
 (function () {
   var ROOT = "https://one.google.com/g1-sku-report";
-  var VERSION = "v7.4.0";
+  var VERSION = "v7.5.0";
   var SCAN_KEY = "g1.sku.scan.v1";
   var TEST_KEY = "g1.pro.annual.test.v1";
-  function buildCandidates(size, legacyTargets) {
-    return [
+  function buildCandidates(size, headTargets, legacyTargets) {
+    return (headTargets || []).concat([
       "g1." + size + ".ai.18months_eft",
       "g1." + size + ".ai.15months_eft",
       "g1." + size + ".ai.12months_eft",
@@ -18,7 +18,7 @@
       "g1." + size + ".ai.6months_eft",
       "g1.ios." + size + ".ai.eft-3mo",
       "g1.play." + size + ".ai.eft-3mo"
-    ].concat(legacyTargets);
+    ]).concat(legacyTargets);
   }
   var TIERS = [
     {
@@ -26,21 +26,25 @@
       label: "2TB",
       prefix: "g1.ios.2tb.",
       key: "g1.2tb.target.index.v1",
-      candidates: buildCandidates("2tb", ["g1.2tb.ai.annual"])
+      candidates: buildCandidates("2tb", [], ["g1.2tb.ai.annual"])
     },
     {
       id: "20tb",
       label: "20TB",
       prefix: "g1.ios.20tb.",
       key: "g1.20tb.target.index.v1",
-      candidates: buildCandidates("20tb", ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"])
+      candidates: buildCandidates("20tb",
+        ["g1.ai.ultra.1month_eft.acq"],
+        ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"])
     },
     {
       id: "30tb",
       label: "30TB",
       prefix: "g1.ios.30tb.",
       key: "g1.30tb.target.index.v1",
-      candidates: buildCandidates("30tb", ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
+      candidates: buildCandidates("30tb",
+        ["g1.ai.ultra.1month_eft.acq"],
+        ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
     }
   ];
   var tierById = Object.create(null);

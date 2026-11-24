@@ -2,11 +2,10 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.4";
+  var VERSION = "g1-acq-v7.5";
   var SOURCE_PREFIX = "g1.ios.2tb.";
-  var EFT_COUNT = 10;
-  function buildCandidates(size, legacyTargets) {
-    return [
+  function buildEftList(size, headTargets) {
+    return (headTargets || []).concat([
       "g1." + size + ".ai.18months_eft",
       "g1." + size + ".ai.15months_eft",
       "g1." + size + ".ai.12months_eft",
@@ -17,27 +16,26 @@
       "g1." + size + ".ai.6months_eft",
       "g1.ios." + size + ".ai.eft-3mo",
       "g1.play." + size + ".ai.eft-3mo"
-    ].concat(legacyTargets);
+    ]);
+  }
+  function makeTier(id, prefix, key, headTargets, legacyTargets) {
+    var eftList = buildEftList(id, headTargets);
+    return {
+      id: id,
+      prefix: prefix,
+      key: key,
+      eftCount: eftList.length,
+      candidates: eftList.concat(legacyTargets)
+    };
   }
   var TIERS = [
-    {
-      id: "2tb",
-      prefix: "g1.ios.2tb.",
-      key: "g1.2tb.target.index.v1",
-      candidates: buildCandidates("2tb", ["g1.2tb.ai.annual"])
-    },
-    {
-      id: "20tb",
-      prefix: "g1.ios.20tb.",
-      key: "g1.20tb.target.index.v1",
-      candidates: buildCandidates("20tb", ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"])
-    },
-    {
-      id: "30tb",
-      prefix: "g1.ios.30tb.",
-      key: "g1.30tb.target.index.v1",
-      candidates: buildCandidates("30tb", ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
-    }
+    makeTier("2tb", "g1.ios.2tb.", "g1.2tb.target.index.v1", [], ["g1.2tb.ai.annual"]),
+    makeTier("20tb", "g1.ios.20tb.", "g1.20tb.target.index.v1",
+      ["g1.ai.ultra.1month_eft.acq"],
+      ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"]),
+    makeTier("30tb", "g1.ios.30tb.", "g1.30tb.target.index.v1",
+      ["g1.ai.ultra.1month_eft.acq"],
+      ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
   ];
   TIERS.forEach(function (tier) {
     var idx = 0;
@@ -90,7 +88,7 @@
     // observed in the original body so legacy .acq tokens in body don't hijack EFT testing,
     // while still preserving 90p -> 75p fallback when a legacy target is selected.
     TIERS.forEach(function (tier) {
-      var scanEnd = tier.selectedIndex < EFT_COUNT ? EFT_COUNT : tier.candidates.length;
+      var scanEnd = tier.selectedIndex < tier.eftCount ? tier.eftCount : tier.candidates.length;
       for (var ti = tier.selectedIndex; ti < scanEnd; ti++) {
         if (body.indexOf(tier.candidates[ti]) !== -1) {
           tier.target = tier.candidates[ti];

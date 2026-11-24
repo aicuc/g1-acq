@@ -1,5 +1,5 @@
 #!name=G1 ACQ
-#!desc=v7.4：2TB/20TB/30TB 三档 EFT 候选 + 末尾保留原目标 SKU，支持独立切换与自动采集
+#!desc=v7.5：Ultra(20TB/30TB) 首选 g1.ai.ultra.1month_eft.acq + 三档 EFT 候选与末尾原目标 SKU
 #!system=ios
 
 [Rule]
