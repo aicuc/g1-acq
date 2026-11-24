@@ -1,5 +1,5 @@
 #!name=G1 ACQ
-#!desc=v7.5：Ultra(20TB/30TB) 首选 g1.ai.ultra.1month_eft.acq + 三档 EFT 候选与末尾原目标 SKU
+#!desc=v7.6：20TB/30TB 开头新增 *.eft.acq 候选 + 三档 EFT 顺序测试与末尾原目标 SKU
 #!system=ios
 
 [Rule]

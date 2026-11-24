@@ -3,7 +3,7 @@
 
 (function () {
   var ROOT = "https://one.google.com/g1-sku-report";
-  var VERSION = "v7.5.0";
+  var VERSION = "v7.6.0";
   var SCAN_KEY = "g1.sku.scan.v1";
   var TEST_KEY = "g1.pro.annual.test.v1";
   function buildCandidates(size, headTargets, legacyTargets) {
@@ -34,7 +34,12 @@
       prefix: "g1.ios.20tb.",
       key: "g1.20tb.target.index.v1",
       candidates: buildCandidates("20tb",
-        ["g1.ai.ultra.1month_eft.acq"],
+        [
+          "g1.20tb.1month_eft.acq",
+          "g1.20tb.12months_eft.acq",
+          "g1.20tb.3months_eft.acq",
+          "g1.ai.ultra.1month_eft.acq"
+        ],
         ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"])
     },
     {
@@ -43,7 +48,11 @@
       prefix: "g1.ios.30tb.",
       key: "g1.30tb.target.index.v1",
       candidates: buildCandidates("30tb",
-        ["g1.ai.ultra.1month_eft.acq"],
+        [
+          "g1.ai.ultra.12months_eft.acq",
+          "g1.ai.ultra.3months_eft.acq",
+          "g1.ai.ultra.1month_eft.acq"
+        ],
         ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
     }
   ];

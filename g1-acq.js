@@ -2,7 +2,7 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.5";
+  var VERSION = "g1-acq-v7.6";
   var SOURCE_PREFIX = "g1.ios.2tb.";
   function buildEftList(size, headTargets) {
     return (headTargets || []).concat([
@@ -31,10 +31,19 @@
   var TIERS = [
     makeTier("2tb", "g1.ios.2tb.", "g1.2tb.target.index.v1", [], ["g1.2tb.ai.annual"]),
     makeTier("20tb", "g1.ios.20tb.", "g1.20tb.target.index.v1",
-      ["g1.ai.ultra.1month_eft.acq"],
+      [
+        "g1.20tb.1month_eft.acq",
+        "g1.20tb.12months_eft.acq",
+        "g1.20tb.3months_eft.acq",
+        "g1.ai.ultra.1month_eft.acq"
+      ],
       ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"]),
     makeTier("30tb", "g1.ios.30tb.", "g1.30tb.target.index.v1",
-      ["g1.ai.ultra.1month_eft.acq"],
+      [
+        "g1.ai.ultra.12months_eft.acq",
+        "g1.ai.ultra.3months_eft.acq",
+        "g1.ai.ultra.1month_eft.acq"
+      ],
       ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
   ];
   TIERS.forEach(function (tier) {
