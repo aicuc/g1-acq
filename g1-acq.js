@@ -2,41 +2,43 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.2";
+  var VERSION = "g1-acq-v7.3";
   var SOURCE_PREFIX = "g1.ios.2tb.";
-  var TARGETS_2TB = [
-    "g1.2tb.ai.18months_eft",
-    "g1.2tb.ai.15months_eft",
-    "g1.2tb.ai.12months_eft",
-    "g1.ios.2tb.ai.12months_eft",
-    "g1.play.2tb.ai.12months_eft",
-    "g1.ios.2tb.ai.eft-12mo",
-    "g1.play.2tb.ai.eft-12mo",
-    "g1.2tb.ai.6months_eft",
-    "g1.ios.2tb.ai.eft-3mo",
-    "g1.play.2tb.ai.eft-3mo"
-  ];
-  var TARGET_KEY = "g1.2tb.target.index.v1";
-  var selectedIndex = 0;
-  try {
-    if (typeof $persistentStore !== "undefined" && typeof $persistentStore.read === "function") {
-      var savedIdx = parseInt($persistentStore.read(TARGET_KEY), 10);
-      if (isFinite(savedIdx) && savedIdx >= 0 && savedIdx < TARGETS_2TB.length) {
-        selectedIndex = savedIdx;
-      }
-    }
-  } catch (error) {
-    selectedIndex = 0;
+  function buildCandidates(size) {
+    return [
+      "g1." + size + ".ai.18months_eft",
+      "g1." + size + ".ai.15months_eft",
+      "g1." + size + ".ai.12months_eft",
+      "g1.ios." + size + ".ai.12months_eft",
+      "g1.play." + size + ".ai.12months_eft",
+      "g1.ios." + size + ".ai.eft-12mo",
+      "g1.play." + size + ".ai.eft-12mo",
+      "g1." + size + ".ai.6months_eft",
+      "g1.ios." + size + ".ai.eft-3mo",
+      "g1.play." + size + ".ai.eft-3mo"
+    ];
   }
-  var TARGET = TARGETS_2TB[selectedIndex];
-  var SKU_MAP = {
-    "g1.ios.20tb.m.v2": "g1.20tb.3months_ip_90p.acq",
-    "g1.ios.30tb.ai.pro.m": "g1.ai.ultra.3months_ip_90p.acq"
-  };
-  var FALLBACK = {
-    "g1.20tb.3months_ip_90p.acq": "g1.20tb.3months_ip_75p.acq",
-    "g1.ai.ultra.3months_ip_90p.acq": "g1.ai.ultra.3months_ip_75p.acq"
-  };
+  var TIERS = [
+    { id: "2tb", prefix: "g1.ios.2tb.", key: "g1.2tb.target.index.v1", candidates: buildCandidates("2tb") },
+    { id: "20tb", prefix: "g1.ios.20tb.", key: "g1.20tb.target.index.v1", candidates: buildCandidates("20tb") },
+    { id: "30tb", prefix: "g1.ios.30tb.", key: "g1.30tb.target.index.v1", candidates: buildCandidates("30tb") }
+  ];
+  TIERS.forEach(function (tier) {
+    var idx = 0;
+    try {
+      if (typeof $persistentStore !== "undefined" && typeof $persistentStore.read === "function") {
+        var savedIdx = parseInt($persistentStore.read(tier.key), 10);
+        if (isFinite(savedIdx) && savedIdx >= 0 && savedIdx < tier.candidates.length) {
+          idx = savedIdx;
+        }
+      }
+    } catch (error) {
+      idx = 0;
+    }
+    tier.selectedIndex = idx;
+    tier.target = tier.candidates[idx];
+    tier.hits = 0;
+  });
   var TEST_KEY = "g1.pro.annual.test.v1";
   var SCAN_KEY = "g1.sku.scan.v1";
   var SCAN_LIMIT = 300;
@@ -68,40 +70,37 @@
   var out = body;
 
   if (typeof body === "string") {
-    // If any candidate from selectedIndex onward appears in the original response,
-    // pick the highest-priority one; otherwise use TARGETS_2TB[selectedIndex].
-    for (var ti = selectedIndex; ti < TARGETS_2TB.length; ti++) {
-      if (body.indexOf(TARGETS_2TB[ti]) !== -1) {
-        TARGET = TARGETS_2TB[ti];
-        break;
+    // For each tier, if any candidate from selectedIndex onward appears in the original response,
+    // pick the highest-priority one; otherwise use candidates[selectedIndex].
+    TIERS.forEach(function (tier) {
+      for (var ti = tier.selectedIndex; ti < tier.candidates.length; ti++) {
+        if (body.indexOf(tier.candidates[ti]) !== -1) {
+          tier.target = tier.candidates[ti];
+          break;
+        }
       }
-    }
-    // Preserve v6's 20TB/30TB fallback rule using the original response.
-    // These are observed strings, not a verified store catalog.
-    var observed = body.match(/g1\.[a-z0-9._]{2,60}acq/g) || [];
-    // Match complete tokens before selecting 2TB or the two existing source IDs.
+    });
+    // Match complete tokens before selecting 2TB / 20TB / 30TB prefixes.
     out = body.replace(
       /(^|[^A-Za-z0-9._@%-])(g1\.[A-Za-z0-9._-]+)(?=$|[^A-Za-z0-9._-])/g,
       function (match, before, id) {
-        var isAnnual = id.indexOf(SOURCE_PREFIX) === 0 && id.length > SOURCE_PREFIX.length;
-        var to;
-        var fallback = false;
-        if (isAnnual) {
-          to = TARGET;
-          fallback = TARGET !== TARGETS_2TB[0];
-        } else if (Object.prototype.hasOwnProperty.call(SKU_MAP, id)) {
-          to = SKU_MAP[id];
-          if (observed.indexOf(to) === -1 && FALLBACK[to] && observed.indexOf(FALLBACK[to]) !== -1) {
-            to = FALLBACK[to];
-            fallback = true;
+        var matchedTier = null;
+        for (var i = 0; i < TIERS.length; i++) {
+          if (id.indexOf(TIERS[i].prefix) === 0 && id.length > TIERS[i].prefix.length) {
+            matchedTier = TIERS[i];
+            break;
           }
-        } else {
+        }
+        if (!matchedTier) {
           return match;
         }
+        var to = matchedTier.target;
+        var fallback = to !== matchedTier.candidates[0];
         if (!mappings[id]) mappings[id] = { id: id, to: to, count: 0, fallback: fallback };
         mappings[id].count += 1;
         hits += 1;
-        if (isAnnual) annualHits += 1;
+        matchedTier.hits += 1;
+        if (matchedTier.id === "2tb") annualHits += 1;
         return before + to;
       }
     );
@@ -110,12 +109,20 @@
   var sources = Object.keys(mappings).sort().map(function (id) {
     return mappings[id];
   });
+  var targetsMap = {};
+  var tierHitsMap = {};
+  TIERS.forEach(function (tier) {
+    targetsMap[tier.id] = tier.target;
+    tierHitsMap[tier.id] = tier.hits;
+  });
   var record = {
     schemaVersion: 1,
     version: VERSION,
     updatedAt: new Date().toISOString(),
     sourcePrefix: SOURCE_PREFIX,
-    target: TARGET,
+    target: TIERS[0].target,
+    targets: targetsMap,
+    tierHits: tierHitsMap,
     hitCount: hits,
     annualHitCount: annualHits,
     matchedFrom: sources,
@@ -133,10 +140,11 @@
     console.log("[g1-acq] local record unavailable");
   }
 
-  console.log("[g1-acq] " + VERSION + " hits=" + hits + " annualHits=" + annualHits);
+  console.log("[g1-acq] " + VERSION + " hits=" + hits +
+    " 2tb=" + tierHitsMap["2tb"] + " 20tb=" + tierHitsMap["20tb"] + " 30tb=" + tierHitsMap["30tb"]);
   sources.forEach(function (source) {
     console.log("[g1-acq] " + source.id + " -> " + source.to + " x" + source.count +
-      (source.fallback ? " fallback=75p" : ""));
+      (source.fallback ? " fallback=yes" : ""));
   });
   $done(hits ? { body: out } : {});
 
