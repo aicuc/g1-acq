@@ -1,5 +1,5 @@
 #!name=G1 ACQ
-#!desc=v7.3：2TB/20TB/30TB 三档各10个 EFT 候选按优先级尝试与独立切换 + 自动采集原始 SKU
+#!desc=v7.4：2TB/20TB/30TB 三档 EFT 候选 + 末尾保留原目标 SKU，支持独立切换与自动采集
 #!system=ios
 
 [Rule]
