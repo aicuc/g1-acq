@@ -2,10 +2,14 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.6";
+  var VERSION = "g1-acq-v7.7";
   var SOURCE_PREFIX = "g1.ios.2tb.";
-  function buildEftList(size, headTargets) {
-    return (headTargets || []).concat([
+  var FALLBACK_75P = {
+    "g1.20tb.3months_ip_90p.acq": "g1.20tb.3months_ip_75p.acq",
+    "g1.ai.ultra.3months_ip_90p.acq": "g1.ai.ultra.3months_ip_75p.acq"
+  };
+  function baseEftList(size) {
+    return [
       "g1." + size + ".ai.18months_eft",
       "g1." + size + ".ai.15months_eft",
       "g1." + size + ".ai.12months_eft",
@@ -16,35 +20,49 @@
       "g1." + size + ".ai.6months_eft",
       "g1.ios." + size + ".ai.eft-3mo",
       "g1.play." + size + ".ai.eft-3mo"
-    ]);
+    ];
   }
-  function makeTier(id, prefix, key, headTargets, legacyTargets) {
-    var eftList = buildEftList(id, headTargets);
+  function dedup(items) {
+    var seen = Object.create(null);
+    return items.filter(function (item) {
+      if (seen[item]) return false;
+      seen[item] = true;
+      return true;
+    });
+  }
+  function makeTier(id, prefix, key, pinnedTop, extraList) {
     return {
       id: id,
       prefix: prefix,
       key: key,
-      eftCount: eftList.length,
-      candidates: eftList.concat(legacyTargets)
+      candidates: dedup(pinnedTop.concat(extraList))
     };
   }
   var TIERS = [
-    makeTier("2tb", "g1.ios.2tb.", "g1.2tb.target.index.v1", [], ["g1.2tb.ai.annual"]),
+    makeTier("2tb", "g1.ios.2tb.", "g1.2tb.target.index.v1",
+      ["g1.2tb.ai.12months_eft"],
+      baseEftList("2tb").concat(["g1.2tb.ai.annual"])),
     makeTier("20tb", "g1.ios.20tb.", "g1.20tb.target.index.v1",
+      [
+        "g1.20tb.3months_ip_90p.acq",
+        "g1.20tb.3months_ip_75p.acq",
+        "g1.ai.ultra.1month_eft.acq"
+      ],
       [
         "g1.20tb.1month_eft.acq",
         "g1.20tb.12months_eft.acq",
-        "g1.20tb.3months_eft.acq",
-        "g1.ai.ultra.1month_eft.acq"
-      ],
-      ["g1.20tb.3months_ip_90p.acq", "g1.20tb.3months_ip_75p.acq"]),
+        "g1.20tb.3months_eft.acq"
+      ].concat(baseEftList("20tb"))),
     makeTier("30tb", "g1.ios.30tb.", "g1.30tb.target.index.v1",
       [
-        "g1.ai.ultra.12months_eft.acq",
-        "g1.ai.ultra.3months_eft.acq",
-        "g1.ai.ultra.1month_eft.acq"
+        "g1.ai.ultra.1month_eft.acq",
+        "g1.ai.ultra.3months_ip_90p.acq",
+        "g1.ai.ultra.3months_ip_75p.acq"
       ],
-      ["g1.ai.ultra.3months_ip_90p.acq", "g1.ai.ultra.3months_ip_75p.acq"])
+      [
+        "g1.ai.ultra.12months_eft.acq",
+        "g1.ai.ultra.3months_eft.acq"
+      ].concat(baseEftList("30tb")))
   ];
   TIERS.forEach(function (tier) {
     var idx = 0;
@@ -93,16 +111,17 @@
   var out = body;
 
   if (typeof body === "string") {
-    // Within the active group (EFT 0..9 vs legacy 10+), pick the highest-priority candidate
-    // observed in the original body so legacy .acq tokens in body don't hijack EFT testing,
-    // while still preserving 90p -> 75p fallback when a legacy target is selected.
+    // Use the exact selected candidate for each tier, except when 90p.acq is selected
+    // and absent from the body while its paired 75p.acq is present.
     TIERS.forEach(function (tier) {
-      var scanEnd = tier.selectedIndex < tier.eftCount ? tier.eftCount : tier.candidates.length;
-      for (var ti = tier.selectedIndex; ti < scanEnd; ti++) {
-        if (body.indexOf(tier.candidates[ti]) !== -1) {
-          tier.target = tier.candidates[ti];
-          break;
-        }
+      var chosen = tier.candidates[tier.selectedIndex];
+      var alt75p = FALLBACK_75P[chosen];
+      if (alt75p && body.indexOf(chosen) === -1 && body.indexOf(alt75p) !== -1) {
+        tier.target = alt75p;
+        tier.usedFallback = true;
+      } else {
+        tier.target = chosen;
+        tier.usedFallback = tier.selectedIndex !== 0;
       }
     });
     // Match complete tokens before selecting 2TB / 20TB / 30TB prefixes.
@@ -120,7 +139,7 @@
           return match;
         }
         var to = matchedTier.target;
-        var fallback = to !== matchedTier.candidates[0];
+        var fallback = matchedTier.usedFallback === true;
         if (!mappings[id]) mappings[id] = { id: id, to: to, count: 0, fallback: fallback };
         mappings[id].count += 1;
         hits += 1;
