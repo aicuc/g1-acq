@@ -2,12 +2,48 @@
 "use strict";
 
 (function () {
-  var VERSION = "g1-acq-v7.7";
+  var VERSION = "g1-acq-v7.8";
   var SOURCE_PREFIX = "g1.ios.2tb.";
   var FALLBACK_75P = {
     "g1.20tb.3months_ip_90p.acq": "g1.20tb.3months_ip_75p.acq",
     "g1.ai.ultra.3months_ip_90p.acq": "g1.ai.ultra.3months_ip_75p.acq"
   };
+  var ULTRA_GENERIC_SKUS = [
+    "g1.ai.ultra.12months_eft",
+    "g1.ai.ultra.1month_eft",
+    "g1.ai.ultra.3months_ip_90p.acq",
+    "g1.ai.ultra.3months_ip_85p.acq",
+    "g1.ai.ultra.3months_ip_80p.acq",
+    "g1.ai.ultra.3months_ip_75p.acq",
+    "g1.ai.ultra.annual",
+    "g1.ai.ultra"
+  ];
+  var ULTRA_20TB_IMAGE_SKUS = [
+    "g1.play.20tb.12months_eft",
+    "g1.play.20tb.1month_eft",
+    "g1.play.20tb.3months_ip_90p.acq",
+    "g1.play.20tb.3months_ip_85p.acq",
+    "g1.play.20tb.3months_ip_80p.acq",
+    "g1.play.20tb.3months_ip_75p.acq",
+    "g1.play.20tb.annual"
+  ];
+  var ULTRA_30TB_IMAGE_SKUS = [
+    "g1.30tb.3months_ip_90p.acq",
+    "g1.ai.pro.12months_eft",
+    "g1.ai.pro.1month_eft",
+    "g1.ai.pro.3months_ip_90p.acq",
+    "g1.ai.pro.3months_ip_85p.acq",
+    "g1.ai.pro.3months_ip_80p.acq",
+    "g1.ai.pro.3months_ip_75p.acq",
+    "g1.ai.pro.annual",
+    "g1.play.ai.pro.12months_eft",
+    "g1.play.ai.pro.1month_eft",
+    "g1.play.ai.pro.3months_ip_90p.acq",
+    "g1.play.ai.pro.3months_ip_85p.acq",
+    "g1.play.ai.pro.3months_ip_80p.acq",
+    "g1.play.ai.pro.3months_ip_75p.acq",
+    "g1.play.ai.pro.annual"
+  ];
   function baseEftList(size) {
     return [
       "g1." + size + ".ai.18months_eft",
@@ -48,21 +84,29 @@
         "g1.20tb.3months_ip_75p.acq",
         "g1.ai.ultra.1month_eft.acq"
       ],
-      [
-        "g1.20tb.1month_eft.acq",
-        "g1.20tb.12months_eft.acq",
-        "g1.20tb.3months_eft.acq"
-      ].concat(baseEftList("20tb"))),
+      ULTRA_20TB_IMAGE_SKUS.concat(
+        ULTRA_GENERIC_SKUS,
+        [
+          "g1.20tb.1month_eft.acq",
+          "g1.20tb.12months_eft.acq",
+          "g1.20tb.3months_eft.acq"
+        ],
+        baseEftList("20tb")
+      )),
     makeTier("30tb", "g1.ios.30tb.", "g1.30tb.target.index.v1",
       [
         "g1.ai.ultra.1month_eft.acq",
         "g1.ai.ultra.3months_ip_90p.acq",
         "g1.ai.ultra.3months_ip_75p.acq"
       ],
-      [
-        "g1.ai.ultra.12months_eft.acq",
-        "g1.ai.ultra.3months_eft.acq"
-      ].concat(baseEftList("30tb")))
+      ULTRA_GENERIC_SKUS.concat(
+        ULTRA_30TB_IMAGE_SKUS,
+        [
+          "g1.ai.ultra.12months_eft.acq",
+          "g1.ai.ultra.3months_eft.acq"
+        ],
+        baseEftList("30tb")
+      ))
   ];
   TIERS.forEach(function (tier) {
     var idx = 0;

@@ -3,9 +3,45 @@
 
 (function () {
   var ROOT = "https://one.google.com/g1-sku-report";
-  var VERSION = "v7.7.0";
+  var VERSION = "v7.8.0";
   var SCAN_KEY = "g1.sku.scan.v1";
   var TEST_KEY = "g1.pro.annual.test.v1";
+  var ULTRA_GENERIC_SKUS = [
+    "g1.ai.ultra.12months_eft",
+    "g1.ai.ultra.1month_eft",
+    "g1.ai.ultra.3months_ip_90p.acq",
+    "g1.ai.ultra.3months_ip_85p.acq",
+    "g1.ai.ultra.3months_ip_80p.acq",
+    "g1.ai.ultra.3months_ip_75p.acq",
+    "g1.ai.ultra.annual",
+    "g1.ai.ultra"
+  ];
+  var ULTRA_20TB_IMAGE_SKUS = [
+    "g1.play.20tb.12months_eft",
+    "g1.play.20tb.1month_eft",
+    "g1.play.20tb.3months_ip_90p.acq",
+    "g1.play.20tb.3months_ip_85p.acq",
+    "g1.play.20tb.3months_ip_80p.acq",
+    "g1.play.20tb.3months_ip_75p.acq",
+    "g1.play.20tb.annual"
+  ];
+  var ULTRA_30TB_IMAGE_SKUS = [
+    "g1.30tb.3months_ip_90p.acq",
+    "g1.ai.pro.12months_eft",
+    "g1.ai.pro.1month_eft",
+    "g1.ai.pro.3months_ip_90p.acq",
+    "g1.ai.pro.3months_ip_85p.acq",
+    "g1.ai.pro.3months_ip_80p.acq",
+    "g1.ai.pro.3months_ip_75p.acq",
+    "g1.ai.pro.annual",
+    "g1.play.ai.pro.12months_eft",
+    "g1.play.ai.pro.1month_eft",
+    "g1.play.ai.pro.3months_ip_90p.acq",
+    "g1.play.ai.pro.3months_ip_85p.acq",
+    "g1.play.ai.pro.3months_ip_80p.acq",
+    "g1.play.ai.pro.3months_ip_75p.acq",
+    "g1.play.ai.pro.annual"
+  ];
   function baseEftList(size) {
     return [
       "g1." + size + ".ai.18months_eft",
@@ -44,11 +80,17 @@
       candidates: dedup([
         "g1.20tb.3months_ip_90p.acq",
         "g1.20tb.3months_ip_75p.acq",
-        "g1.ai.ultra.1month_eft.acq",
-        "g1.20tb.1month_eft.acq",
-        "g1.20tb.12months_eft.acq",
-        "g1.20tb.3months_eft.acq"
-      ].concat(baseEftList("20tb")))
+        "g1.ai.ultra.1month_eft.acq"
+      ].concat(
+        ULTRA_20TB_IMAGE_SKUS,
+        ULTRA_GENERIC_SKUS,
+        [
+          "g1.20tb.1month_eft.acq",
+          "g1.20tb.12months_eft.acq",
+          "g1.20tb.3months_eft.acq"
+        ],
+        baseEftList("20tb")
+      ))
     },
     {
       id: "30tb",
@@ -58,10 +100,16 @@
       candidates: dedup([
         "g1.ai.ultra.1month_eft.acq",
         "g1.ai.ultra.3months_ip_90p.acq",
-        "g1.ai.ultra.3months_ip_75p.acq",
-        "g1.ai.ultra.12months_eft.acq",
-        "g1.ai.ultra.3months_eft.acq"
-      ].concat(baseEftList("30tb")))
+        "g1.ai.ultra.3months_ip_75p.acq"
+      ].concat(
+        ULTRA_GENERIC_SKUS,
+        ULTRA_30TB_IMAGE_SKUS,
+        [
+          "g1.ai.ultra.12months_eft.acq",
+          "g1.ai.ultra.3months_eft.acq"
+        ],
+        baseEftList("30tb")
+      ))
     }
   ];
   var tierById = Object.create(null);
